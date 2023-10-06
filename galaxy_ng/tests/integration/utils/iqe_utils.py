@@ -104,7 +104,7 @@ class GalaxyKitClient:
 
         self._basic_token = basic_token
         try:
-            config = self.config()
+            config = self.config(role)
         except TypeError:
             config = self.config
         if not role:
@@ -153,8 +153,8 @@ class GalaxyKitClient:
                                 basic_token=self._basic_token
                             )
                     auth = {
-                        "username": user["username"],
-                        "password": user["password"],
+                        "username": user.PROFILES[role]["username"],
+                        "password": user.PROFILES[role]["password"],
                         "auth_url": profile_config.get("auth_url"),
                         "token": token,
                     }
@@ -389,6 +389,9 @@ class AnsibleConfigFixture(dict):
             self.PROFILES["basic_user"]["token"] = None
         elif is_galaxy_stage():
             self.PROFILES = GALAXY_STAGE_ANSIBLE_PROFILES
+            for profile in GALAXY_STAGE_ANSIBLE_PROFILES:
+                self.set_profile(profile)
+
         else:
             for profile_name in PROFILES:
                 p = PROFILES[profile_name]
