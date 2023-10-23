@@ -1,4 +1,18 @@
 @Library(['aap-jenkins-shared-library@galaxy_ng_yolo']) _
+import steps.StepsFactory
+import validation.AapqaProvisionerParameters
+
+StepsFactory stepsFactory = new StepsFactory(this, pipelineParameters, 'aap_galaxy_ng')
+Map provisionInfo = [:]
+Map installInfo = [:]
+Map towerqaSetupInfo = [:]
+Map ansibleUIinfo = [:]
+Map validateInfo = [:]
+List installerFlags = []
+Map installerVars = [:]
+String pulpcore_version = ''
+String automationhub_pulp_ansible_version = ''
+String automationhub_pulp_container_version = ''
 
 pipeline {
         agent {
@@ -12,60 +26,16 @@ pipeline {
             timeout(time: 18, unit: 'HOURS')
             buildDiscarder(logRotator(daysToKeepStr: '10', numToKeepStr: '50', artifactNumToKeepStr: '40'))
         }
-        /*
-        parameters {
-            separator(name: 'INSTALLER_VERSION_SEPARATOR', sectionHeader: 'Installer version')
-
-            choice(
-                name: 'AAP_VERSION_VAR_FILE',
-                description: '''The version of AAP to install''',
-                choices: AapqaProvisionerParameters.AAP_VERSIONS_VAR_FILES
-            )
-
-            separator(name: 'GALAXY_NG_SEPARATOR', sectionHeader: 'GALAXY_NG')
-            string(
-                name: 'GALAXY_NG_GIT_FORK',
-                description: "The galaxy_ng fork",
-                defaultValue: 'ansible'
-            )
-            string(
-                name: 'GALAXY_NG_GIT_VERSION',
-                description: "The galaxy_ng branch",
-                defaultValue: 'master'
-            )
-            separator(name: 'VERSIONS_SEPARATOR', sectionHeader: 'DEPENDENCY VERSIONS')
-            choice(
-                name: 'VERSIONS',
-                description: 'Use pulpcore, pulp_ansible, pulp-container versions defined in setup.py from galaxy_ng repo or in the installer or user-defined below.',
-                choices: ["setup.py", "installer", "custom"]
-            )
-            string(
-                name: 'AUTOMATIONHUB_PULPCORE_VERSION',
-                description: '🚧Development🚧<br>Overrides "pulpcore_version" in the installer, which can pip install the right version. Only if custom has been selected.',
-                defaultValue: ''
-            )
-            string(
-                name: 'AUTOMATIONHUB_PULP_ANSIBLE_VERSION',
-                description: '🚧Development🚧<br>Overrides "automationhub_pulp_ansible_version" in the installer, which can pip install the right version. Only if custom has been selected.',
-                defaultValue: ''
-            )
-            string(
-                name: 'AUTOMATIONHUB_PULP_CONTAINER_VERSION',
-                description: '🚧Development🚧<br>Overrides "automationhub_pulp_container_version" in the installer, which can pip install the right version. Only if custom has been selected.',
-                defaultValue: ''
-            )
-            string(
-                name: 'AUTOMATIONHUB_UI_DOWNLOAD_URL',
-                description: "The automationhub ui url",
-                defaultValue: 'https://github.com/ansible/ansible-hub-ui/releases/download/dev/automation-hub-ui-dist.tar.gz'
-            )
-        }
-        */
-
+        
         stages {
             stage('Validate') {
                 steps {
                     script {
+
+                        echo "GitHub Repository: ${env.GITHUB_REPO}"
+                        echo "GitHub Fork: ${env.GITHUB_FORK}"
+                        echo "Branch Name: ${env.BRANCH_NAME}"
+                            
                         validateInfo = stepsFactory.yoloSteps.validateYoloParameters(params)
 
                         List provisionFlags = []
@@ -88,18 +58,13 @@ pipeline {
                 steps {
                     container('aapqa-ansible') {
                         script {
-                                stepsFactory.commonSteps.checkoutGalaxyNG([galaxyNGBranch: params.GALAXY_NG_GIT_VERSION,  galaxyNGFork: params.GALAXY_NG_GIT_FORK])
+                                stepsFactory.commonSteps.checkoutGalaxyNG([galaxyNGBranch: env.BRANCH_NAME,  galaxyNGFork: env.GITHUB_FORK])
                         }
                     }
                 }
             }
 
-
             stage('Get pulpcore, pulp_ansible, pulp-container versions from setup.py') {
-                when {
-                    expression { return params.VERSIONS == 'setup.py' }
-                }
-
                 steps {
                     container('aapqa-ansible') {
                         script {
@@ -139,22 +104,6 @@ pipeline {
                 }
                 
             }
-
-            stage('Get pulpcore, pulp_ansible, pulp-container versions from Jenkins parameters') {
-                when {
-                    expression { return params.VERSIONS == 'custom' }
-                }
-
-                steps {
-                    container('aapqa-ansible') {
-                        script {
-                                pulpcore_version = params.AUTOMATIONHUB_PULPCORE_VERSION
-                                automationhub_pulp_ansible_version = params.AUTOMATIONHUB_PULP_ANSIBLE_VERSION
-                                automationhub_pulp_container_version = params.AUTOMATIONHUB_PULP_CONTAINER_VERSION
-                            }
-                        }
-                   }
-            } 
 
             stage('Setup aapqa-provisioner') {
                 steps {
@@ -205,9 +154,9 @@ pipeline {
                             installerVars = [:]
 
                             Map ahubPipParams = [
-                                    automationhub_git_url: "https://github.com/${GALAXY_NG_GIT_FORK}/galaxy_ng",
-                                    automationhub_git_version: "${params.GALAXY_NG_GIT_VERSION}",
-                                    automationhub_ui_download_url: "${params.AUTOMATIONHUB_UI_DOWNLOAD_URL}",
+                                    automationhub_git_url: "https://github.com/${env.GITHUB_FORK}/galaxy_ng",
+                                    automationhub_git_version: "${env.BRANCH_NAME}",
+                                    automationhub_ui_download_url: "https://github.com/ansible/ansible-hub-ui/releases/download/dev/automation-hub-ui-dist.tar.gz",
                             ]
                             if (pulpcore_version != '') {
                                 ahubPipParams['pulpcore_version'] = "${pulpcore_version}"
@@ -236,7 +185,7 @@ pipeline {
                             archiveArtifacts(artifacts: 'input/install/ahub_pip.yml')
                             
                             installInfo = stepsFactory.aapqaAapInstallerSteps.install(provisionInfo + [
-                                aapVersionVarFile: "${params.AAP_VERSION_VAR_FILE}",
+                                aapVersionVarFile: "input/install/2.4_released.yml",
                                 installerVarFiles: installerFlags + [
                                     "input/aap_scenarios/1inst_1hybr_1ahub.yml",
                                     "input/platform/rhel88.yml"
