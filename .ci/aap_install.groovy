@@ -36,9 +36,10 @@ pipeline {
                         echo "GitHub Repository: ${env.GITHUB_REPO}"
                         echo "GitHub Fork: ${env.GITHUB_FORK}"
                         fork = env.GITHUB_FORK ?: 'ansible'
+                        echo "${fork}"
                         echo "Branch Name: ${env.BRANCH_NAME}"
                             
-                        validateInfo = stepsFactory.yoloSteps.validateYoloParameters(params)
+                        // validateInfo = stepsFactory.yoloSteps.validateYoloParameters(params)
 
                         List provisionFlags = []
 
