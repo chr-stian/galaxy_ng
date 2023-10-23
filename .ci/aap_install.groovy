@@ -13,6 +13,7 @@ Map installerVars = [:]
 String pulpcore_version = ''
 String automationhub_pulp_ansible_version = ''
 String automationhub_pulp_container_version = ''
+String fork = 'ansible'
 
 pipeline {
         agent {
@@ -34,6 +35,7 @@ pipeline {
 
                         echo "GitHub Repository: ${env.GITHUB_REPO}"
                         echo "GitHub Fork: ${env.GITHUB_FORK}"
+                        fork = env.GITHUB_FORK ?: 'ansible'
                         echo "Branch Name: ${env.BRANCH_NAME}"
                             
                         validateInfo = stepsFactory.yoloSteps.validateYoloParameters(params)
@@ -58,7 +60,7 @@ pipeline {
                 steps {
                     container('aapqa-ansible') {
                         script {
-                                stepsFactory.commonSteps.checkoutGalaxyNG([galaxyNGBranch: env.BRANCH_NAME,  galaxyNGFork: env.GITHUB_FORK])
+                                stepsFactory.commonSteps.checkoutGalaxyNG([galaxyNGBranch: env.BRANCH_NAME,  galaxyNGFork: fork])
                         }
                     }
                 }
@@ -154,7 +156,7 @@ pipeline {
                             installerVars = [:]
 
                             Map ahubPipParams = [
-                                    automationhub_git_url: "https://github.com/${env.GITHUB_FORK}/galaxy_ng",
+                                    automationhub_git_url: "https://github.com/${fork}/galaxy_ng",
                                     automationhub_git_version: "${env.BRANCH_NAME}",
                                     automationhub_ui_download_url: "https://github.com/ansible/ansible-hub-ui/releases/download/dev/automation-hub-ui-dist.tar.gz",
                             ]
