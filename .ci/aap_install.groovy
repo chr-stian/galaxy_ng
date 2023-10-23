@@ -2,7 +2,7 @@
 import steps.StepsFactory
 import validation.AapqaProvisionerParameters
 
-StepsFactory stepsFactory = new StepsFactory(this, pipelineParameters, 'aap_galaxy_ng')
+StepsFactory stepsFactory = new StepsFactory(this, [:], 'aap_galaxy_ng')
 Map provisionInfo = [:]
 Map installInfo = [:]
 Map towerqaSetupInfo = [:]
