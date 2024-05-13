@@ -9,7 +9,7 @@ from ..utils.iqe_utils import pull_and_tag_test_image
 
 
 # this is to be enabled when https://github.com/ansible/galaxy_ng/pull/1627
-# is merged
+# is merged.
 
 
 @pytest.mark.deployment_standalone
