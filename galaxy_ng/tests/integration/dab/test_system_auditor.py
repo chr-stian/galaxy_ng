@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 
+from galaxy_ng.tests.integration.utils.rbac_utils import create_test_user
 
 pytestmark = pytest.mark.qa  # noqa: F821
 
@@ -14,6 +15,7 @@ pytestmark = pytest.mark.qa  # noqa: F821
     os.getenv("ENABLE_DAB_TESTS"),
     reason="Skipping test because ENABLE_DAB_TESTS is set"
 )
+@pytest.mark.skip_in_gw
 def test_system_auditor_role_permissions_without_gateway(galaxy_client):
     """Tests the galaxy.system_auditor role can be added to a user and has the right perms."""
 
